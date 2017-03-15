@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "JZGlobal.h"
 #include "JZMemory.h"
 

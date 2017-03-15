@@ -1,10 +1,31 @@
 #pragma once
-
+#include <Windows.h>
 #include <MMSystem.h>
 #include "JZGlobal.h"
+#include "ANCGlobalDefine.h"
+
+class JZPCMPlayer;
 
 
-class JZPCMPlayer
+/*****************************/
+/*        播放代理            */
+/*****************************/
+class JZPCMPlayerDelegate
+{
+public:
+	virtual void OnJZPCMPlayerOpen(JZPCMPlayer* player) = 0;
+	virtual void OnJZPCMPlayerPlayDone(JZPCMPlayer* player) = 0;
+	virtual void OnJZPCMPlayerClose(JZPCMPlayer* player) = 0;
+};
+
+
+
+
+/*****************************/
+/*        播放               */
+/*****************************/
+
+class ANCWORKSPACEDLL_API JZPCMPlayer
 {
 public:
 	JZPCMPlayer();
@@ -15,6 +36,10 @@ public:
 	int StartPlay(PWAVEHDR pWaveHdr);
 	int StopPlay();
 	int TeardownPlayer();
+
+	JZPCMPlayerDelegate * delegate;
+
+	int tag;
 
 	GETPROP(int, isPlayerRunning)
 	GET(int, isPlayerRunning) {

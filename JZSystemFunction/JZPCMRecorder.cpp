@@ -1,5 +1,3 @@
-#include "stdafx.h"
-
 #include "JZPCMRecorder.h"
 
 
@@ -128,7 +126,7 @@ int JZPCMRecorder::CreateRecorder(unsigned int channels,
 
 int JZPCMRecorder::StartRecorder() {
 	// Begin sampling     
-	m_record = true;
+	_isRecorderRunning = YES;
 	dwDataLength = 0;
 	waveInStart(hWaveIn);  //打开输入设备，开始录音
 
@@ -137,7 +135,7 @@ int JZPCMRecorder::StartRecorder() {
 
 int JZPCMRecorder::StopRecorder()
 {
-	m_record = false;
+	_isRecorderRunning = NO;
 	waveInReset(hWaveIn); // 停止录音
 	waveInClose(hWaveIn); // 关闭输入设备
 	return 0;
@@ -187,14 +185,17 @@ int JZPCMRecorder::TeardownRecorder()
 
 DWORD JZPCMRecorder::AudioRecorder_Callback(HWAVEIN hwavein, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2)
 {
-	JZPCMRecorder* recorder = (JZPCMRecorder*)dwParam2;
+	JZPCMRecorder* recorder = (JZPCMRecorder*)dwInstance;
 	// 消息switch
 	switch (uMsg)
 	{
 	case WIM_OPEN: // 设备成功已打开
 	{
 		_RecordeChunksCount = 0;
-		_isRecorderRunning = YES;
+		if (NULL != recorder->delegate)
+		{
+			recorder->delegate->OnJZPCMRecorderOpen(recorder);
+		}
 	}
 		break;
 
@@ -202,18 +203,25 @@ DWORD JZPCMRecorder::AudioRecorder_Callback(HWAVEIN hwavein, UINT uMsg, DWORD dw
 	case WIM_DATA: // 缓冲区数据填充完毕	
 	{
 		PWAVEHDR recordWavHeader = (PWAVEHDR)dwParam1;
+		_RecordeChunksCount++;
 
-		// implementAlgorithmAndPlay(recordWavHeader, rcChannels, rcBitsPerSample, rcSamplesPerSec);
+		if (NULL != recorder->delegate)
+		{
+			recorder->delegate->OnJZPCMRecorderGetData(recorder, recordWavHeader->lpData, recordWavHeader->dwBytesRecorded);
+		}
 
 		memset(recordWavHeader->lpData, 0, recordWavHeader->dwBytesRecorded);
 
-		waveInAddBuffer(hwavein, (PWAVEHDR)dwParam1, sizeof(WAVEHDR));//将缓冲区添加回到设备中
+		waveInAddBuffer(hwavein, (PWAVEHDR)dwParam1, sizeof(WAVEHDR)); // 将缓冲区添加回到设备中
 	}
 		break;
 
 	case WIM_CLOSE: // 操作成功完成
 	{
-		_isRecorderRunning = NO;
+		if (NULL != recorder->delegate)
+		{
+			recorder->delegate->OnJZPCMRecorderClose(recorder);
+		}
 	}
 		break;
 

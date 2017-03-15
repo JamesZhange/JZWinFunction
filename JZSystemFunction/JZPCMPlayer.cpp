@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "JZPCMPlayer.h"
 
 // 静态变量初始化
@@ -7,6 +6,8 @@ int JZPCMPlayer::_isPlayerRunning = NO;
 
 JZPCMPlayer::JZPCMPlayer()
 {
+	tag = 0;
+	delegate = NULL;
 }
 
 
@@ -35,7 +36,6 @@ int JZPCMPlayer::CreatePlayer(int channels, int samplesPerSec, int bitsPerSample
 	if (waveOutOpen(&hWaveOut, WAVE_MAPPER, &pyWaveform, (DWORD_PTR)AudioPlay_Callback, (DWORD_PTR)this, CALLBACK_FUNCTION)) //打开输出设备，开始回放
 	{
 		MessageBeep(MB_ICONEXCLAMATION);
-		AfxMessageBox(L"Audio output error");
 		return 1;
 	}
 	return 0;
@@ -70,7 +70,6 @@ int JZPCMPlayer::StartPlay(PWAVEHDR pWaveHdr)
 
 int JZPCMPlayer::StopPlay()
 {
-	// waveOutClose(hWaveOut);
 	waveOutReset(hWaveOut);  //停止回放，关闭输出设备
 	_isPlayerRunning = NO;
 	dwRepetitions = 1;
@@ -79,6 +78,11 @@ int JZPCMPlayer::StopPlay()
 
 int JZPCMPlayer::TeardownPlayer()
 {
+	if (NULL != hWaveOut)
+	{
+		waveOutClose(hWaveOut);
+		hWaveOut = NULL;
+	}
 	return 0;
 }
 
@@ -92,14 +96,17 @@ int JZPCMPlayer::TeardownPlayer()
 
 void JZPCMPlayer::AudioPlay_Callback(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2)
 {
-	WAVEHDR *wHdr;
-	JZPCMPlayer* player = (JZPCMPlayer*)dwParam2;
+	JZPCMPlayer* player = (JZPCMPlayer*)dwInstance;
 
 	switch (uMsg)
 	{
 	case WOM_OPEN:
 	{
 		_isPlayerRunning = 1;
+		if (NULL != player->delegate)
+		{
+			player->delegate->OnJZPCMPlayerOpen(player);
+		}
 	}
 	break;
 	
@@ -111,16 +118,24 @@ void JZPCMPlayer::AudioPlay_Callback(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInsta
 
 		// 播放完自己释放了播放buffer的内存
 		destroyWaveHearder(pWaveHdr);
+
+		if (NULL != player->delegate)
+		{
+			player->delegate->OnJZPCMPlayerPlayDone(player);
+		}
 	}
 		break;
 
-	case WOM_CLOSE:
+	case WOM_CLOSE:  // bug: hWaveOut() 没有触发这个消息
 	{
-		player->TeardownPlayer();
+		if (NULL != player->delegate)
+		{
+			player->delegate->OnJZPCMPlayerClose(player);
+		}
 
 	}
+		break;
 
-	break;
 	default:
 		break;
 

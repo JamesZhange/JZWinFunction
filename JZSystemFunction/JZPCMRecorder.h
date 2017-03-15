@@ -1,13 +1,35 @@
 #pragma once
-
+#include <Windows.h>
 #include <MMSystem.h>
 #include "JZGlobal.h"
+#include "ANCGlobalDefine.h"
 
+
+class JZPCMRecorder;
+
+
+/*****************************/
+/*        录音代理            */
+/*****************************/ 
+class JZPCMRecorderDelegate
+{
+public:
+	virtual void OnJZPCMRecorderOpen(JZPCMRecorder* recorder) = 0;
+	virtual void OnJZPCMRecorderGetData(JZPCMRecorder* recorder, char* pBuff, unsigned int nBuffLen) = 0;
+	virtual void OnJZPCMRecorderClose(JZPCMRecorder* recorder) = 0;
+};
+
+
+
+
+/*****************************/
+/*        录音                */
+/*****************************/
 
 #define JZAUDIORECORDERBUFFERNUM		10		// 录音缓冲buffer个数
 
 
-class JZPCMRecorder
+class ANCWORKSPACEDLL_API JZPCMRecorder
 {
 public:
 	JZPCMRecorder();
@@ -21,6 +43,25 @@ public:
 	int StartRecorder();
 	int StopRecorder();
 	int TeardownRecorder();
+
+	JZPCMRecorderDelegate * delegate;
+	int tag;
+
+	//--- 属性 ---
+	GETPROP(int, Channels)
+	GET(int, Channels) {
+		return rcChannels;
+	}
+
+	GETPROP(int, SamplesPerSec)
+	GET(int, SamplesPerSec) {
+		return rcSamplesPerSec;
+	}
+
+	GETPROP(int, BitsPerSample)
+	GET(int, BitsPerSample) {
+		return rcBitsPerSample;
+	}
 
 	GETPROP(int, isRecorderRunning)
 	GET(int, isRecorderRunning) {
@@ -39,7 +80,7 @@ private:
 	int rcSamplesPerSec;
 	int rcBitsPerSample;
 
-	bool m_record;	// m_record表示是否正在录音
+	// bool m_record;	// m_record表示是否正在录音
 
 
 	WAVEFORMATEX waveform;    //WAV文件头包含音频格式

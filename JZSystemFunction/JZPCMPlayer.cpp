@@ -43,24 +43,34 @@ int JZPCMPlayer::CreatePlayer(int channels, int samplesPerSec, int bitsPerSample
 
 int JZPCMPlayer::StartPlay(LPSTR pBuffer, DWORD dwDataLength)
 {
-	// Set up header
-	PWAVEHDR WaveHdr = reinterpret_cast<PWAVEHDR>(malloc(sizeof(WAVEHDR)));
-	WaveHdr->lpData = pBuffer;
-	WaveHdr->dwBufferLength = dwDataLength;
-	WaveHdr->dwBytesRecorded = 0;
-	WaveHdr->dwUser = 0;
-	WaveHdr->dwFlags = WHDR_BEGINLOOP | WHDR_ENDLOOP;
-	WaveHdr->dwLoops = dwRepetitions;
-	WaveHdr->lpNext = NULL;
-	WaveHdr->reserved = 0;
+	if ((NULL != pBuffer) && (dwDataLength > 0))
+	{
+		// Set up header
+		PWAVEHDR WaveHdr = reinterpret_cast<PWAVEHDR>(malloc(sizeof(WAVEHDR)));
+		WaveHdr->lpData = (LPSTR)malloc(dwDataLength);
+		if (NULL != WaveHdr->lpData)
+		{
+			memcpy(WaveHdr->lpData, pBuffer, dwDataLength);
+			WaveHdr->dwBufferLength = dwDataLength;
+			WaveHdr->dwBytesRecorded = 0;
+			WaveHdr->dwUser = 0;
+			WaveHdr->dwFlags = WHDR_BEGINLOOP | WHDR_ENDLOOP;
+			WaveHdr->dwLoops = 1;
+			WaveHdr->lpNext = NULL;
+			WaveHdr->reserved = 0;
 
-	StartPlay(WaveHdr);
+			StartPlay(WaveHdr);
 
-	return 0;
+			return 0;
+		}
+		return -3;
+	}
+	return -1;
 }
 
 int JZPCMPlayer::StartPlay(PWAVEHDR pWaveHdr)
 {
+	_isPlayerRunning = YES;
 	waveOutPrepareHeader(hWaveOut, pWaveHdr, sizeof(WAVEHDR));
 	waveOutWrite(hWaveOut, pWaveHdr, sizeof(WAVEHDR));
 	dwRepetitions = 1;
@@ -70,8 +80,9 @@ int JZPCMPlayer::StartPlay(PWAVEHDR pWaveHdr)
 
 int JZPCMPlayer::StopPlay()
 {
-	waveOutReset(hWaveOut);  //停止回放，关闭输出设备
 	_isPlayerRunning = NO;
+	waveOutReset(hWaveOut);  //停止回放，关闭输出设备
+	
 	dwRepetitions = 1;
 	return 0;
 }
@@ -80,6 +91,7 @@ int JZPCMPlayer::TeardownPlayer()
 {
 	if (NULL != hWaveOut)
 	{
+		_isPlayerRunning = NO;
 		waveOutClose(hWaveOut);
 		hWaveOut = NULL;
 	}
@@ -102,7 +114,6 @@ void JZPCMPlayer::AudioPlay_Callback(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInsta
 	{
 	case WOM_OPEN:
 	{
-		_isPlayerRunning = 1;
 		if (NULL != player->delegate)
 		{
 			player->delegate->OnJZPCMPlayerOpen(player);
@@ -113,16 +124,22 @@ void JZPCMPlayer::AudioPlay_Callback(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInsta
 	case WOM_DONE:
 	{
 		PWAVEHDR pWaveHdr = (PWAVEHDR)dwParam1;
-
-		waveOutUnprepareHeader(hWaveOut, pWaveHdr, sizeof(WAVEHDR));
-
-		// 播放完自己释放了播放buffer的内存
-		destroyWaveHearder(pWaveHdr);
-
-		if (NULL != player->delegate)
+		if (YES == _isPlayerRunning)
 		{
-			player->delegate->OnJZPCMPlayerPlayDone(player);
+			waveOutUnprepareHeader(hWaveOut, pWaveHdr, sizeof(WAVEHDR));
+			// 播放完自己释放了播放buffer的内存
+			destroyWaveHearder(pWaveHdr);
+
+			if (NULL != player->delegate)
+			{
+				player->delegate->OnJZPCMPlayerPlayDone(player);
+			}
 		}
+		else
+		{
+			destroyWaveHearder(pWaveHdr);
+		}
+		
 	}
 		break;
 

@@ -15,7 +15,7 @@ class JZPCMRecorderDelegate
 {
 public:
 	virtual void OnJZPCMRecorderOpen(JZPCMRecorder* recorder) = 0;
-	virtual void OnJZPCMRecorderGetData(JZPCMRecorder* recorder, char* pBuff, unsigned int nBuffLen) = 0;
+	virtual void OnJZPCMRecorderGetData(JZPCMRecorder* recorder, char* pBuff, unsigned int nBuffLen) = 0; // 注：pBuff是录音程序用缓存区，delegate内部不能释放
 	virtual void OnJZPCMRecorderClose(JZPCMRecorder* recorder) = 0;
 };
 
@@ -26,7 +26,7 @@ public:
 /*        录音                */
 /*****************************/
 
-#define JZAUDIORECORDERBUFFERNUM		10		// 录音缓冲buffer个数
+#define AUDIORECORDER_BUFFER_SIZE	(10 * 1024)  //定义缓冲区大小
 
 
 class ANCWORKSPACEDLL_API JZPCMRecorder
@@ -37,17 +37,25 @@ public:
 
 public:
 	int CreateRecorder(unsigned int channels,
-		unsigned int samplesPerSec, 
+		unsigned int samplesPerSec,
 		unsigned int bitsPerSample,
-		unsigned int cacheBufferNum = JZAUDIORECORDERBUFFERNUM);
+		int nDeviceID = WAVE_MAPPER,
+		unsigned int cacheBufferSize = AUDIORECORDER_BUFFER_SIZE,
+		unsigned int cacheBufferNum = 10
+		);
 	int StartRecorder();
 	int StopRecorder();
 	int TeardownRecorder();
 
 	JZPCMRecorderDelegate * delegate;
-	int tag;
+	
+
+	static int JZPCMRecorder::waveInputDeviceCapacity(int &devNum, WAVEINCAPS** ppWavInDevCaqs);
+
 
 	//--- 属性 ---
+	int tag;
+
 	GETPROP(int, Channels)
 	GET(int, Channels) {
 		return rcChannels;
@@ -68,12 +76,10 @@ public:
 		return _isRecorderRunning;
 	}
 
-	GETPROP(int, RecordeChunksCount)
-	GET(int, RecordeChunksCount) {
-		return _RecordeChunksCount;
-	}
 
 private:
+
+	static int _isRecorderRunning;
 
 	// 录音
 	int rcChannels;
@@ -88,11 +94,11 @@ private:
 	HWAVEIN hWaveIn;     //输入设备句柄
 
 	unsigned int _CacheBufferNum;
+	unsigned int _CacheBufferSize;
 	PWAVEHDR * _WaveHdrArray;//声音文件头
 	PBYTE * _RecordeBufferArray;  // 录音输入缓冲区
 
-	static int _isRecorderRunning;
-	static int _RecordeChunksCount;
+	
 
 	//---
 	// WaveXAPI回调函数

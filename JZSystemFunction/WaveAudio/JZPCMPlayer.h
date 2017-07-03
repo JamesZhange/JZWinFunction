@@ -31,15 +31,29 @@ public:
 	JZPCMPlayer();
 	~JZPCMPlayer();
 
-	int CreatePlayer(int channels, int samplesPerSec, int bitsPerSample);
-	int StartPlay(LPSTR pBuffer, DWORD dwDataLength);
+	int CreatePlayer(int channels, int samplesPerSec, int bitsPerSample, int outputDevID = WAVE_MAPPER);
+	int StartPlay(LPSTR pBuffer, DWORD dwDataLength, float volumeRate = 1.0);
 	int StartPlay(PWAVEHDR pWaveHdr);
 	int StopPlay();
 	int TeardownPlayer();
+	static int waveOutputDeviceCapacity(int& devNum, WAVEOUTCAPS** pWavOutDevCaqs);
 
 	JZPCMPlayerDelegate * delegate;
 
 	int tag;
+
+	GETPROP(int, Channels)
+	GET(int, Channels) {
+		return plChannels;
+	}
+	GETPROP(int, SamplesPerSec)
+	GET(int, SamplesPerSec) {
+		return plSamplesPerSec;
+	}
+	GETPROP(int, BitsPerSample)
+	GET(int, BitsPerSample) {
+		return plBitsPerSample;
+	}
 
 	GETPROP(int, isPlayerRunning)
 	GET(int, isPlayerRunning) {
@@ -67,7 +81,11 @@ private:
 		DWORD dwParam1,
 		DWORD dwParam2);
 
-	static PWAVEHDR JZPCMPlayer::CopyWaveHearder(PWAVEHDR orgWavHeader);
-	static void JZPCMPlayer::destroyWaveHearder(PWAVEHDR wavHeader);
+	static PWAVEHDR CopyWaveHearder(PWAVEHDR orgWavHeader);
+	static void destroyWaveHearder(PWAVEHDR wavHeader);
+
+	void adjustVolume(char* pPcmData, int nDataLength, float volumeRate);
+	void adjust8BitSampleForVolume(char* pcmDataBuff, int pcmDataLen, float volumeRate);
+	void adjust16BitSampleForVolume(char* pcmDataBuff, int pcmDataLen, float volumeRate);
 };
 

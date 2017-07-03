@@ -1,30 +1,37 @@
-#include "PCMFileManager.h"
+#include "ReadPCMFileManager.h"
 
 int FindString(char *s, int s_len, char *d, int d_len, int *pos);
 
 
 
-PCMFileManager::PCMFileManager()
+ReadPCMFileManager::ReadPCMFileManager()
 {
 	pPCMFile = NULL;
 	_isAvailable = NO;
 	WaveHeaderOffset = 0;
 	_isPcmHaveHeader = NO;
+	_currentFileFullPath = _T("");
+	_currentFilePath = _T("");
+	_currentFileName = _T("");
 	memset(&_FileFormat, 0, sizeof(_FileFormat));
 }
 
-PCMFileManager::PCMFileManager(CString filepath)
+ReadPCMFileManager::ReadPCMFileManager(CString filepath)
 {
 	pPCMFile = NULL;
-	int ret = openFileWithPath(filepath);
-
+	_isAvailable = NO;
 	WaveHeaderOffset = 0;
 	_isPcmHaveHeader = NO;
+	_currentFileFullPath = _T("");
+	_currentFilePath = _T("");
+	_currentFileName = _T("");
 	memset(&_FileFormat, 0, sizeof(_FileFormat));
+
+	int ret = openFileWithPath(filepath);
 }
 
 
-PCMFileManager::~PCMFileManager()
+ReadPCMFileManager::~ReadPCMFileManager()
 {
 	closeCurrentFile();
 }
@@ -32,13 +39,15 @@ PCMFileManager::~PCMFileManager()
 
 
 
-int PCMFileManager::openFileWithPath(CString filepath)
+int ReadPCMFileManager::openFileWithPath(CString filepath)
 {
 	closeCurrentFile();
 
 	pPCMFile = _wfopen(filepath.GetBuffer(), _T("rb"));
 	if (NULL != pPCMFile)
 	{
+		saveCurrentPath(filepath);
+
 		fseek(pPCMFile, 0, SEEK_END);
 		int fileLen = ftell(pPCMFile);
 		fseek(pPCMFile, 0, SEEK_SET);
@@ -62,7 +71,7 @@ int PCMFileManager::openFileWithPath(CString filepath)
 	return -3;
 }
 
-int PCMFileManager::closeCurrentFile()
+int ReadPCMFileManager::closeCurrentFile()
 {
 	if (NULL != pPCMFile)
 	{
@@ -73,11 +82,11 @@ int PCMFileManager::closeCurrentFile()
 	WaveHeaderOffset = 0;
 	_isPcmHaveHeader = NO;
 	memset(&_FileFormat, 0, sizeof(_FileFormat));
-	
+	cleanCurrentPath();
 	return 0;
 }
 
-int PCMFileManager::loadNextPCMDataLen(unsigned int needLen, strcPCMData& outData, int loopload)
+int ReadPCMFileManager::loadNextPCMDataLen(unsigned int needLen, strcPCMData& outData, int loopload)
 {
 	if (0 != needLen)
 	{
@@ -101,6 +110,9 @@ int PCMFileManager::loadNextPCMDataLen(unsigned int needLen, strcPCMData& outDat
 			}
 
 			outData.nDataLen = readlen;
+			outData.nPCMSamplerate = _FileFormat.dwSamplesPerSec;
+			outData.nPCMBitPerSample = _FileFormat.wBitsPerSample;
+			outData.nPCMChannels = _FileFormat.wChannels;
 			return 0;
 		}
 		return -2;
@@ -108,7 +120,7 @@ int PCMFileManager::loadNextPCMDataLen(unsigned int needLen, strcPCMData& outDat
 	return -3;
 }
 
-int PCMFileManager::resetFilePosition()
+int ReadPCMFileManager::resetFilePosition()
 {
 	if (NULL != pPCMFile)
 	{
@@ -129,7 +141,7 @@ int PCMFileManager::resetFilePosition()
 // 参数3：headerlen实际头长度,相对码流文件长度的偏移
 //**************************************************************//
 // static
-int PCMFileManager::getWaveHeader(char *input_buf,  int inputlen,
+int ReadPCMFileManager::getWaveHeader(char *input_buf,  int inputlen,
 	WAVEDEC_HEADER* wave_header,  int *headerlen)
 {
 	char *header_tmp_buf;
@@ -188,7 +200,7 @@ int PCMFileManager::getWaveHeader(char *input_buf,  int inputlen,
 
 
 // static
-int PCMFileManager::getWaveHeaderLen(char *input_buf, 
+int ReadPCMFileManager::getWaveHeaderLen(char *input_buf, 
 	int inputlen, 
 	int *headerlen)
 {
@@ -199,9 +211,8 @@ int PCMFileManager::getWaveHeaderLen(char *input_buf,
 	return ret;
 }
 
-
 #define HEADER_BUF_LEN 1024
-int PCMFileManager::getWaveHeaderOffset()
+int ReadPCMFileManager::getWaveHeaderOffset()
 {
 	if (NULL == pPCMFile)
 	{
@@ -239,7 +250,7 @@ int PCMFileManager::getWaveHeaderOffset()
 	return offset;
 }
 
-int PCMFileManager::getWaveFormat(int& isFileHaveHeader, WAVE_FORMAT& fileFormat)
+int ReadPCMFileManager::getWaveFormat(int& isFileHaveHeader, WAVE_FORMAT& fileFormat)
 {
 	if (NULL == pPCMFile)
 	{
@@ -278,6 +289,23 @@ int PCMFileManager::getWaveFormat(int& isFileHaveHeader, WAVE_FORMAT& fileFormat
 }
 
 
+
+void ReadPCMFileManager::saveCurrentPath(CString filepath)
+{
+	_currentFileFullPath = filepath;
+
+	int pos = filepath.ReverseFind('\\');
+	_currentFilePath = filepath.Left(pos+1);
+
+	_currentFileName = filepath.Right(filepath.GetLength() - pos -1);
+}
+
+void ReadPCMFileManager::cleanCurrentPath()
+{
+	_currentFileFullPath = _T("");
+	_currentFilePath = _T("");
+	_currentFileName = _T("");
+}
 
 
 //----------------------

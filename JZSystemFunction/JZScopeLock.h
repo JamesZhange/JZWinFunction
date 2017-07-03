@@ -44,7 +44,7 @@ public:
 	~JZEvent();
 
 	void EventSet();
-	int EventWait(unsigned long ms);
+	int EventWait(unsigned long ms);  // INFINITE:一直等待
 	void Abort();
 private:
 	HANDLE m_Event;
@@ -61,6 +61,7 @@ private:
 
 JZLock alock;
 
+// exp1:
 alock.Lock();
 some code 1
 alock.Unlock();
@@ -69,12 +70,14 @@ alock.Lock();
 some code 2
 alock.Unlock();
 
+// exp2:
 {
 	JZScopeLock(&alock);
 	some code 3;
 }
 
 //------------
+// exp3 线程信号:
 class AThreadClass
 {
 protected:
@@ -83,7 +86,7 @@ protected:
 
 AThreadClass::Stop()
 {
-	m_Event.Abort();
+	m_Event.Abort();  // 其他 EventWait 等待的地方会收到该消息并开始后续执行
 }
 
 *******************************************/

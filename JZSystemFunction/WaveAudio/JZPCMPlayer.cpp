@@ -17,7 +17,29 @@ JZPCMPlayer::~JZPCMPlayer()
 
 
 
-int JZPCMPlayer::CreatePlayer(int channels, int samplesPerSec, int bitsPerSample)
+
+int JZPCMPlayer::waveOutputDeviceCapacity(int& devNum, WAVEOUTCAPS** pWavOutDevCaqs)
+{
+	devNum = 0;
+	*pWavOutDevCaqs = NULL;
+	devNum = waveOutGetNumDevs();
+	if (devNum > 0)
+	{
+		*pWavOutDevCaqs = (WAVEOUTCAPS*)malloc(devNum * sizeof(WAVEOUTCAPS));
+		for (int i = 0; i < devNum; i++)
+		{
+			MMRESULT mmResult = waveOutGetDevCaps(i, ((WAVEOUTCAPS*)(*pWavOutDevCaqs) + i), sizeof(WAVEOUTCAPS));
+		}
+
+		return 0;
+	}
+
+	return 1;
+}
+
+
+
+int JZPCMPlayer::CreatePlayer(int channels, int samplesPerSec, int bitsPerSample, int outputDevID)
 {
 	plChannels = channels;
 	plSamplesPerSec = samplesPerSec;
@@ -33,7 +55,7 @@ int JZPCMPlayer::CreatePlayer(int channels, int samplesPerSec, int bitsPerSample
 	pyWaveform.nBlockAlign = (pyWaveform.nChannels *pyWaveform.wBitsPerSample / 8); // 4;
 	pyWaveform.cbSize = 0;
 
-	if (waveOutOpen(&hWaveOut, WAVE_MAPPER, &pyWaveform, (DWORD_PTR)AudioPlay_Callback, (DWORD_PTR)this, CALLBACK_FUNCTION)) //打开输出设备，开始回放
+	if (waveOutOpen(&hWaveOut, outputDevID, &pyWaveform, (DWORD_PTR)AudioPlay_Callback, (DWORD_PTR)this, CALLBACK_FUNCTION)) //打开输出设备，开始回放
 	{
 		MessageBeep(MB_ICONEXCLAMATION);
 		return 1;
@@ -41,7 +63,7 @@ int JZPCMPlayer::CreatePlayer(int channels, int samplesPerSec, int bitsPerSample
 	return 0;
 }
 
-int JZPCMPlayer::StartPlay(LPSTR pBuffer, DWORD dwDataLength)
+int JZPCMPlayer::StartPlay(LPSTR pBuffer, DWORD dwDataLength, float volumeRate)
 {
 	if ((NULL != pBuffer) && (dwDataLength > 0))
 	{
@@ -58,6 +80,9 @@ int JZPCMPlayer::StartPlay(LPSTR pBuffer, DWORD dwDataLength)
 			WaveHdr->dwLoops = 1;
 			WaveHdr->lpNext = NULL;
 			WaveHdr->reserved = 0;
+
+			// 音量控制
+			adjustVolume((char*)WaveHdr->lpData, dwDataLength, volumeRate);
 
 			StartPlay(WaveHdr);
 
@@ -159,8 +184,6 @@ void JZPCMPlayer::AudioPlay_Callback(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInsta
 	}
 }
 
-
-
 PWAVEHDR JZPCMPlayer::CopyWaveHearder(PWAVEHDR orgWavHeader)
 {
 	PWAVEHDR retHeader = reinterpret_cast<PWAVEHDR>(malloc(sizeof(WAVEHDR)));
@@ -189,6 +212,66 @@ void JZPCMPlayer::destroyWaveHearder(PWAVEHDR wavHeader)
 			wavHeader->lpData = NULL;
 		}
 		free(wavHeader);
+	}
+}
+
+
+//----- volume --- 
+
+void JZPCMPlayer::adjustVolume(char* pPcmData, int nDataLength, float volumeRate)
+{
+	if (volumeRate >= 1.0)
+	{
+	}
+	else if (volumeRate <= 0)
+	{
+		memset(pPcmData, 0, nDataLength);
+	}
+	else
+	{
+		// printf("change volume: %f for datalen: %d\n", volumeRate, nDataLength);
+		if (8 == plBitsPerSample)
+		{
+			adjust8BitSampleForVolume((char*)pPcmData, nDataLength, volumeRate);
+		}
+		else if (16 == plBitsPerSample)
+		{
+			adjust16BitSampleForVolume((char*)pPcmData, nDataLength, volumeRate);
+		}
+	}
+
+}
+
+
+void JZPCMPlayer::adjust8BitSampleForVolume(char* pcmDataBuff, int pcmDataLen, float volumeRate)
+{
+	if (((NULL == pcmDataBuff) || (pcmDataLen <= 0))
+		|| (volumeRate <= 0) || (volumeRate >= 1.0))
+	{
+		return;
+	}
+	char* pPcmBuff = pcmDataBuff;
+	for (int i=0; i<pcmDataLen; i++)
+	{
+		// 当volumeRate 大于 1时，其实可以做饱和操作的，这里暂时没写这一部分
+		*pPcmBuff = (*pPcmBuff) * volumeRate;
+		pPcmBuff++;
+	}
+}
+
+void JZPCMPlayer::adjust16BitSampleForVolume(char* pcmDataBuff, int pcmDataLen, float volumeRate)
+{
+	if (((NULL == pcmDataBuff) || (pcmDataLen <= 1))
+		|| (volumeRate <= 0) || (volumeRate >= 1.0))
+	{
+		return;
+	}
+	short* pPcmBuff = (short*)pcmDataBuff;
+	for (int i = 0; i < (pcmDataLen)/2; i++)
+	{
+		// 当volumeRate 大于 1时，其实可以做饱和操作的，这里暂时没写这一部分
+		*pPcmBuff = (*pPcmBuff) * volumeRate;
+		pPcmBuff++;
 	}
 }
 

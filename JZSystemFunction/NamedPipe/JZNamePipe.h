@@ -10,7 +10,7 @@
 #include "windows.h"
 
 
-#define PIPE_DATA_BUF     1024
+#define PIPE_DATA_BUF     (50*1024)
 
 // typedef enum _jznamedpipeeventeum
 // {
@@ -47,6 +47,7 @@ public:
 	
 	int tag;
 
+protected:
 	DWORD WritePipeData(HANDLE hPipe, BYTE* pbData, DWORD dwDataLen);
 	DWORD ReadPipeData(HANDLE hPipe, BYTE* pbData, DWORD* pdwDataLen);
 };

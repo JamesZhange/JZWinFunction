@@ -5,12 +5,16 @@
 
 
 JZNamePipeServer::JZNamePipeServer(std::wstring& sName, 
-								   JZNamePipeServerEventDelegate* eventDelegate): m_sPipeName(sName),
-																				  m_ServerThread(NULL),
+								   JZNamePipeServerEventDelegate* eventDelegate): m_ServerThread(NULL),
 																				  m_eventDelegate(eventDelegate),
 																				  m_hPipe(NULL),
 																				  isPipeThreadReading(0)
 {
+	CString pipePrivateName(sName.c_str());
+	CString pipeName;
+	pipeName.Format(_T("\\\\.\\pipe\\%s"), pipePrivateName);
+	m_sPipeName = pipeName.GetString();
+
 	memset(&bReadBuf, 0, PIPE_DATA_BUF);
 	m_PipeState = PipeServerState_Init;
 	isServerThreadRunning = NO;

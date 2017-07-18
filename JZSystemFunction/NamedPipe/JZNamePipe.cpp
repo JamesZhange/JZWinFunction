@@ -4,6 +4,7 @@
 
 JZNamePipe::JZNamePipe()
 {
+	tag = 0;
 }
 
 

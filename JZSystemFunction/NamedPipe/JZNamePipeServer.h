@@ -35,7 +35,7 @@ typedef enum _jznamedpipeservererrorcode
 
 
 
-class JZNamePipeServer: JZNamePipe
+class JZNamePipeServer: public JZNamePipe
 {
 public:
 	JZNamePipeServer(std::wstring& sName, JZNamePipeServerEventDelegate* eventDelegate);
@@ -53,9 +53,9 @@ private:
 	BYTE bReadBuf[PIPE_DATA_BUF];
 	// BYTE bWritebuf[PIPE_DATA_BUF];
 
-	const std::wstring m_sPipeName; // Pipe name
+	std::wstring m_sPipeName;		// Pipe name
 	HANDLE m_hPipe;                 // Pipe handle
-	// HANDLE m_hThread;               // Pipe thread
+	// HANDLE m_hThread;            // Pipe thread
 	JZNamePipeServerEventDelegate* m_eventDelegate;
 
 

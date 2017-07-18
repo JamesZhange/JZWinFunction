@@ -22,6 +22,7 @@ typedef enum _jznamedpipeclienterrorcode
 	PipeClientError_TryConnectTimeOut,
 	PipeClientError_ConnectFaild,
 	PipeClientError_ReadBuffFaild,
+	PipeClientError_WriteDataFaild,
 
 	PipeClientError_Serious = 0x1000,
 	PipeClientError_EmptyPipeName,
@@ -34,13 +35,14 @@ typedef enum _jznamedpipeclienterrorcode
 
 
 
-class JZNamePipeClient: JZNamePipe
+class JZNamePipeClient: public JZNamePipe
 {
 public:
-	JZNamePipeClient(std::wstring& sName, JZNamePipeClientEventDelegate* eventDelegate);
+	JZNamePipeClient(JZNamePipeClientEventDelegate* eventDelegate);
 	~JZNamePipeClient();
 
-	int ConnectToPipeServer(DWORD nTimeOut); // nTimeOut µÈ´ý³¬Ê±£¬ºÁÃë
+	// int ConnectToPipeServer(DWORD nTimeOut); // nTimeOut µÈ´ý³¬Ê±£¬ºÁÃë
+	int ConnectToPipeServer(std::wstring& sName, DWORD nTimeOut);
 	void SendData(BYTE* pbData, DWORD dwDataLen);
 	int DisconnectToServer();
 
@@ -52,9 +54,9 @@ public:
 private:
 	BYTE bWritebuf[PIPE_DATA_BUF];
 
-	const std::wstring m_sPipeName; // Pipe name
+	// std::wstring* m_pPipeName;		// Pipe name
 	HANDLE m_hPipe;                 // Pipe handle
-	// HANDLE m_hThread;               // Pipe thread
+	// HANDLE m_hThread;            // Pipe thread
 	JZNamePipeClientEventDelegate* m_eventDelegate;
 
 	int isPipeConnected;
@@ -81,8 +83,6 @@ class JZNamePipeClientEventDelegate
 {
 public:
 	virtual void NamedPipeClientStateChange(JZNamePipeClient& client, eumPipeClientState stateCode);
-	virtual void NamedPipeClientReceiveData(JZNamePipeClient& client, BYTE* pbData, DWORD pdwDataLen);
-
 	virtual void NamedPipeClientError(JZNamePipeClient& client, eumPipeClientError errCode, DWORD paramL=0);
 };
 

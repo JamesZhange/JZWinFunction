@@ -56,6 +56,12 @@ int SinePcmMaker::sinePcmForSampleN(int sampleN, float customPhase)
 	return SamplesN;
 }
 
+//
+float SinePcmMaker::sineAmplitudeForSampleN(int sampleN, float customPhase)
+{
+	float SamplesN = sin(2 * PI * _signFrequency * (sampleN*_sampleCycleTime) + customPhase);
+	return SamplesN;
+}
 
 int SinePcmMaker::resetOutPhase()
 {

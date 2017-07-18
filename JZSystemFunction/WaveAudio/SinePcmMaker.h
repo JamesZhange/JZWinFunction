@@ -33,12 +33,12 @@ public:
 	GETPROP(int, makerAvailable)
 	GET(int, _makerAvailable) {
 		return _makerAvailable;
-
 	}
 	// 
 	int createMaker(float signFrequency, float maxAmplitude, float initPhase, float sampleFrequence);
 	int sinePcmForSampleN(int sampleN);
 	int sinePcmForSampleN(int sampleN, float customPhase);  // for debug
+	float sineAmplitudeForSampleN(int sampleN, float customPhase);  // ¸¡µãÖµÊä³ö
 	int resetOutPhase();
 
 

@@ -4,9 +4,7 @@
 
 
 
-JZNamePipeClient::JZNamePipeClient(std::wstring& sName,
-								   JZNamePipeClientEventDelegate* eventDelegate): m_sPipeName(sName),
-																				  m_eventDelegate(eventDelegate),
+JZNamePipeClient::JZNamePipeClient(JZNamePipeClientEventDelegate* eventDelegate): m_eventDelegate(eventDelegate),
 																				  m_hPipe(NULL)
 {
 	memset(&bWritebuf, 0, PIPE_DATA_BUF);
@@ -20,24 +18,28 @@ JZNamePipeClient::~JZNamePipeClient()
 }
 
 
-int JZNamePipeClient::ConnectToPipeServer(DWORD nTimeOut)
+int JZNamePipeClient::ConnectToPipeServer(std::wstring& sName, DWORD nTimeOut)
 {
-	if (m_sPipeName.empty())
+	if (sName.empty())
 	{
 		OnPipeClientError(PipeClientError_EmptyPipeName);
 	}
-
 	TerminatePipe();
 
+	CString pipeName = _T("\\\\.\\pipe\\");
+	CString pipePrivateName(sName.c_str());
+	pipeName = pipeName + pipePrivateName;
+	std::wstring FullPipeName = pipeName.GetString();
+
 	//step1:检测管道是否可用
-	if (!WaitNamedPipe(m_sPipeName.c_str(), nTimeOut))  // 检查连接，超时 毫秒
+	if (!WaitNamedPipe(FullPipeName.c_str(), nTimeOut))  // 检查连接，超时 毫秒
 	{
 		// wprintf(_T("管道无法打开"));
 		return PipeClientError_TryConnectTimeOut;
 	}
 
 	//step2:连接管道
-	m_hPipe = CreateFile(m_sPipeName.c_str(),
+	m_hPipe = CreateFile(FullPipeName.c_str(),
 		GENERIC_READ | GENERIC_WRITE,
 		0,
 		NULL,
@@ -62,6 +64,8 @@ int JZNamePipeClient::ConnectToPipeServer(DWORD nTimeOut)
 		return -1;
 	}
 }
+
+
 
 int JZNamePipeClient::DisconnectToServer()
 {
@@ -92,6 +96,7 @@ void JZNamePipeClient::SendData(BYTE* pbData, DWORD dwDataLen)
 		if (0 != ret)
 		{
 			std::wcout << "WritePipeData err:" << ret << std::endl;
+			OnPipeClientError(PipeClientError_WriteDataFaild);
 		}
 	}
 }
@@ -112,6 +117,7 @@ void JZNamePipeClient::OnPipeClientError(eumPipeClientError err, DWORD paramL)
 	if (NULL != m_eventDelegate)
 	{
 		m_eventDelegate->NamedPipeClientError(*this, err, paramL);
+		TerminatePipe();
 	}
 }
 
@@ -125,11 +131,6 @@ void JZNamePipeClient::OnPipeClientError(eumPipeClientError err, DWORD paramL)
 /***************************************************************/
 
 void JZNamePipeClientEventDelegate::NamedPipeClientStateChange(JZNamePipeClient& client, eumPipeClientState stateCode)
-{
-
-}
-
-void JZNamePipeClientEventDelegate::NamedPipeClientReceiveData(JZNamePipeClient& client, BYTE* pbData, DWORD pdwDataLen)
 {
 
 }

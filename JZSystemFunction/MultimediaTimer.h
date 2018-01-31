@@ -2,6 +2,7 @@
 #include <mmsystem.h>
 #include <windows.h>
 #include "JZGlobal.h"
+#include "JZScopeLock.h"
 
 class MultimediaTimerOnTimeDelegate;
 
@@ -14,7 +15,7 @@ public:
 	MultimediaTimer(MultimediaTimerOnTimeDelegate* OntimeDelegate = NULL);
 	~MultimediaTimer();
 
-	UINT StartTimer(UINT uDelay, int isRepeat);
+	UINT StartTimer(UINT uInterval, int isRepeat);
 	void StopTimer();
 
 	GETPROP(int, isCreate)
@@ -30,6 +31,8 @@ private:
 
 	MultimediaTimerOnTimeDelegate* mDelegate;
 	static void CALLBACK TimeProc(UINT id, UINT msg, DWORD dwUser, DWORD dw1, DWORD dw2);
+
+	static JZEvent procEvent;
 };
 
 

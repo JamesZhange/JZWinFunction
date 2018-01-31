@@ -44,6 +44,7 @@ public:
 	~JZEvent();
 
 	void EventSet();
+	void EventReset();
 	int EventWait(unsigned long ms);  // INFINITE:Ò»Ö±µÈ´ý
 	void Abort();
 private:
@@ -72,7 +73,7 @@ alock.Unlock();
 
 // exp2:
 {
-	JZScopeLock(&alock);
+	JZScopeLock scopeLock(&alock);
 	some code 3;
 }
 

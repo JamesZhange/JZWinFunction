@@ -5,11 +5,41 @@
 JZNamePipe::JZNamePipe()
 {
 	tag = 0;
+
+	m_LastError = PipeError_NoErr;
+	m_LastErrorParam = NULL;
+
+	pReadBuf = NULL;
+	pReadBuf = new BYTE[PIPE_DATA_BUF];
+	if (NULL == pReadBuf)
+	{
+		printf("create temp buffer faild!!!!\n");
+		m_LastError = PipeError_MemoryAllocFaild;
+	}
+
+	pWriteBuf = NULL;
+	pWriteBuf = new BYTE[PIPE_DATA_BUF];
+	if (NULL == pWriteBuf)
+	{
+		printf("create temp buffer faild!!!!\n");
+		m_LastError = PipeError_MemoryAllocFaild;
+	}
 }
 
 
 JZNamePipe::~JZNamePipe()
 {
+	if (NULL != pReadBuf)
+	{
+		delete[] pReadBuf;
+		pReadBuf = NULL;
+	}
+
+	if (NULL != pWriteBuf)
+	{
+		delete[] pWriteBuf;
+		pWriteBuf = NULL;
+	}
 }
 
 
@@ -26,19 +56,24 @@ DWORD JZNamePipe::WritePipeData(HANDLE hPipe, BYTE* pbData, DWORD dwDataLen)
 {
 	BOOL        bRet;
 	DWORD       dwRet;
-	BYTE        bTemp[PIPE_DATA_BUF] = { 0 };
 	DWORD       dwTempLen = 0;
 	BYTE*       p = NULL;
 	DWORD       dwNumWrite = 0;
 	DWORD       dwTotleLen = 0;
 
-	p = bTemp;
+	if (NULL == pWriteBuf)
+	{
+		printf("Write temp buff NULL!!!!\n");
+		return -3;
+	}
+
+	p = pWriteBuf;
 	memcpy(p, &dwDataLen, sizeof(DWORD));
 	p += sizeof(DWORD);
 	memcpy(p, pbData, dwDataLen);
 
 	dwTotleLen = dwDataLen + sizeof(DWORD);
-	p = bTemp;
+	p = pWriteBuf;
 
 	while (dwTotleLen)
 	{
@@ -71,13 +106,12 @@ DWORD JZNamePipe::ReadPipeData(HANDLE hPipe, BYTE* pbData, DWORD* pdwDataLen)
 {
 	BOOL    bRet;
 	DWORD   dwRet;
-	BYTE    bTemp[PIPE_DATA_BUF] = { 0 };
 	DWORD   dwLen = 0;
 	DWORD   dwTempLen = 0;
 	BYTE*   p = NULL;
 
 	//先读取长度
-	bRet = ReadFile(hPipe, bTemp, sizeof(DWORD), &dwLen, NULL);
+	bRet = ReadFile(hPipe, &dwTempLen, sizeof(DWORD), &dwLen, NULL);
 	if (!bRet || dwLen == 0)
 	{
 		dwRet = GetLastError();
@@ -97,8 +131,6 @@ DWORD JZNamePipe::ReadPipeData(HANDLE hPipe, BYTE* pbData, DWORD* pdwDataLen)
 		printf("接收数据长度不正确，recv len[%d]\n", dwLen);
 		return 1;
 	}
-
-	memcpy(&dwTempLen, bTemp, sizeof(DWORD));
 
 	//读取数据
 	p = pbData;

@@ -99,6 +99,20 @@ void JZEvent::EventSet()
 	}
 }
 
+// [2017-07-28] james
+void JZEvent::EventReset() 
+{
+	if (m_Event)
+	{
+#if defined(WIN32) || defined(WINCE)
+
+		ResetEvent(m_Event);
+#else
+		// ?
+#endif
+	}
+}
+
 int JZEvent::EventWait(unsigned long ms)
 {
 #if defined(WIN32) || defined(WINCE)

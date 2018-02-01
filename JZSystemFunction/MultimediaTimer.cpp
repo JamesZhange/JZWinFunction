@@ -25,7 +25,7 @@ MultimediaTimer::~MultimediaTimer()
 	// timeEndPeriod(uResolution);
 }
 
-UINT MultimediaTimer::StartTimer(UINT uInterval, int isRepeat)
+UINT MultimediaTimer::StartTimer(UINT uMilliSecond, int isRepeat)
 {
 	UINT fuEvent = TIME_ONESHOT;
 	if (NO != isRepeat)
@@ -34,7 +34,7 @@ UINT MultimediaTimer::StartTimer(UINT uInterval, int isRepeat)
 	}
 
 	timerID = timeSetEvent(
-		uInterval,
+		uMilliSecond,
 		uResolution,
 		TimeProc,
 		(DWORD)this,

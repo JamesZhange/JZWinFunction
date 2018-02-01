@@ -15,7 +15,7 @@ public:
 	MultimediaTimer(MultimediaTimerOnTimeDelegate* OntimeDelegate = NULL);
 	~MultimediaTimer();
 
-	UINT StartTimer(UINT uInterval, int isRepeat);
+	UINT StartTimer(UINT uMilliSecond, int isRepeat);
 	void StopTimer();
 
 	GETPROP(int, isCreate)

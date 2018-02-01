@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <MMSystem.h>
 #include "JZGlobal.h"
-#include "ANCGlobalDefine.h"
 
 
 class JZPCMRecorder;
@@ -29,7 +28,7 @@ public:
 #define AUDIORECORDER_BUFFER_SIZE	(10 * 1024)  //定义缓冲区大小
 
 
-class ANCWORKSPACEDLL_API JZPCMRecorder
+class JZPCMRecorder
 {
 public:
 	JZPCMRecorder();

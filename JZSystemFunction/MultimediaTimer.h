@@ -3,6 +3,9 @@
 #include <windows.h>
 #include "JZGlobal.h"
 #include "JZScopeLock.h"
+#include "KnRGlobalDefine.h"
+#include "JZThread.h"
+#include "KnR_Pipe.h"
 
 class MultimediaTimerOnTimeDelegate;
 

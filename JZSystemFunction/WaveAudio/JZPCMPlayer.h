@@ -2,7 +2,7 @@
 #include <Windows.h>
 #include <MMSystem.h>
 #include "JZGlobal.h"
-#include "ANCGlobalDefine.h"
+#include "KnRGlobalDefine.h"
 
 class JZPCMPlayer;
 
@@ -25,7 +25,7 @@ public:
 /*        ²¥·Å               */
 /*****************************/
 
-class ANCWORKSPACEDLL_API JZPCMPlayer
+class JZPCMPlayer
 {
 public:
 	JZPCMPlayer();

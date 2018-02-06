@@ -12,6 +12,9 @@ typedef int		PlatformPtrType;
 #define YES		(1)
 #define NO		(0)
 
+#define NoError			(0)
+#define ParamsError		(-2)
+#define MemoryError		(-3)
 
 // C++  Ù–‘∫Í
 /************************************************************************
